@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: leadharbor
+      POSTGRES_PASSWORD: leadharbor_dev_password
+      POSTGRES_DB: leadharbor
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadharbor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [leadharbor]
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      LEADHARBOR_DATABASE_URL: postgresql+psycopg://leadharbor:leadharbor_dev_password@postgres:5432/leadharbor
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [leadharbor]
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=Asia/Dubai
+      - WEBHOOK_URL=http://localhost:5678/
+      - LEADHARBOR_API_URL=http://api:8000
+      - LEADHARBOR_API_KEY=${LEADHARBOR_API_KEY:-dev-key-change-me}
+      - SLACK_WEBHOOK_URL=${LEADHARBOR_SLACK_WEBHOOK_URL:-}
+    volumes:
+      - n8n-data:/home/node/.n8n
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [leadharbor]
+
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: leadharbor
+      MB_DB_PASS: leadharbor_dev_password
+      MB_DB_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [leadharbor]
+
+volumes:
+  postgres-data:
+  n8n-data:
+
+networks:
+  leadharbor:

@@ -1,0 +1,71 @@
+{
+  "name": "LeadHarbor - 05 AI Voice Calls (Retell/Vapi)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "minutes", "minutesInterval": 5 }
+          ]
+        }
+      },
+      "id": "sched-voice-1",
+      "name": "Every 5 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.LEADHARBOR_API_URL}}/api/v1/internal/voice/calls-due",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.LEADHARBOR_API_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-due-1",
+      "name": "Get Calls Due",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.RETELL_API_URL}}/v2/create-phone-call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{$env.RETELL_API_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from_number: $env.RETELL_FROM_NUMBER, to_number: $json.phone, override_agent_id: $env.RETELL_AGENT_ID, retell_llm_dynamic_variables: { full_name: $json.name, lead_id: String($json.lead_id) } }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "http-retell-1",
+      "name": "Trigger AI Call (Retell)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Every 5 minutes": {
+      "main": [[{ "node": "Get Calls Due", "type": "main", "index": 0 }]]
+    },
+    "Get Calls Due": {
+      "main": [[{ "node": "Trigger AI Call (Retell)", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": { "instanceId": "leadharbor" },
+  "tags": ["leadharbor"]
+}

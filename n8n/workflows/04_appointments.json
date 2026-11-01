@@ -1,0 +1,50 @@
+{
+  "name": "LeadHarbor - 04 Appointment Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leadharbor-appointments",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "wh-appt-1",
+      "name": "Calendar Webhook (Cal.com/GHL)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "leadharbor-appointments"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.LEADHARBOR_API_URL}}/api/v1/appointments",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.LEADHARBOR_API_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $json.body && $json.body.email ? $json.body.email : $json.email, phone: $json.body && $json.body.phone ? $json.body.phone : $json.phone, lead_id: $json.lead_id || null, scheduled_at: $json.scheduled_at || ($json.body && $json.body.start_time) || $json.start, timezone: $json.timezone || ($json.body && $json.body.timezone) || 'America/New_York', meeting_url: $json.meeting_url || ($json.body && $json.body.location) || null, provider: 'calcom' }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "http-appt-1",
+      "name": "Record Appointment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "Calendar Webhook (Cal.com/GHL)": {
+      "main": [[{ "node": "Record Appointment", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": { "instanceId": "leadharbor" },
+  "tags": ["leadharbor"]
+}

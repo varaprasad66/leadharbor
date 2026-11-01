@@ -1,0 +1,11 @@
+[project]
+name = "leadharbor"
+version = "1.0.0"
+description = "AI lead follow-up & sales funnel automation for real estate"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

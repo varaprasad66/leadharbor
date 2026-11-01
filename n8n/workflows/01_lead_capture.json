@@ -1,0 +1,50 @@
+{
+  "name": "LeadHarbor - 01 Lead Capture (FB/IG)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leadharbor-lead-capture",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "wh-capture-1",
+      "name": "FB/IG Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "leadharbor-lead-capture"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.LEADHARBOR_API_URL}}/api/v1/webhooks/facebook/relay",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.LEADHARBOR_API_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ leadgen_id: $json.leadgen_id || ($json.changes ? $json.changes[0].value.leadgen_id : null), form_id: $json.form_id || ($json.changes ? $json.changes[0].value.form_id : null), ad_id: $json.ad_id || ($json.changes ? $json.changes[0].value.ad_id : null), source: 'facebook', field_data: $json.field_data || ($json.changes ? $json.changes[0].value.field_data : []) }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "http-relay-1",
+      "name": "Forward to LeadHarbor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "FB/IG Lead Webhook": {
+      "main": [[{ "node": "Forward to LeadHarbor", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": { "instanceId": "leadharbor" },
+  "tags": ["leadharbor"]
+}

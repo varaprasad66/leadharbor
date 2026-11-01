@@ -1,0 +1,58 @@
+{
+  "name": "LeadHarbor - 02 Inbound SMS (Twilio)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["received"]
+      },
+      "id": "twilio-trig-1",
+      "name": "Twilio SMS Received",
+      "type": "n8n-nodes-base.twilioTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_WITH_TWILIO_CREDENTIAL_ID",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.LEADHARBOR_API_URL}}/api/v1/webhooks/twilio/sms",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "From", "value": "={{ $json.From || $json.from }}" },
+            { "name": "To", "value": "={{ $json.To || $json.to }}" },
+            { "name": "Body", "value": "={{ $json.Body || $json.body }}" },
+            { "name": "MessageSid", "value": "={{ $json.MessageSid || $json.message_sid || $json.Sid }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "http-sms-1",
+      "name": "Forward to LeadHarbor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    }
+  ],
+  "connections": {
+    "Twilio SMS Received": {
+      "main": [[{ "node": "Forward to LeadHarbor", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "meta": { "instanceId": "leadharbor" },
+  "tags": ["leadharbor"]
+}

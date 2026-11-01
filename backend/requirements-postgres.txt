@@ -1,0 +1,2 @@
+# Used in the Docker image (Postgres driver). Not needed for local sqlite tests.
+psycopg[binary]>=3.2
